@@ -1,0 +1,404 @@
+//var thisRed=111;
+//var thisGreen=0;
+//var thisBlue=255;
+
+var longPressTimeout=750;
+var lightPowerTimeout=2000;
+var screenTimeout=15000;
+var databaseTimeout=5000;
+var databaseTimer;
+var screenTimer;
+var lightPowerTimer;
+var longPressTimer;
+var longPressTimeOutTimer;
+var screenIsOn=false;
+var lightsAreOn; //=true; // will get the value from the database
+var urlStub='http://192.168.75.91:5000/';
+
+function doStuff() {
+
+var clickPresets = document.querySelectorAll('.photo-grid-item');
+for ( var i=0; i < clickPresets.length; i++ ) {
+  var clickPreset = clickPresets[i];
+  new Clicker ( clickPreset );
+  }
+
+var clickSliders = document.querySelectorAll('.slider');
+for ( var i=0; i < clickSliders.length; i++ ) {
+  var clickSlider = clickSliders[i];
+  new Slider ( clickSlider );
+  }
+
+//sendColour("setting","#6f00ff");
+
+document.body.addEventListener('touchstart', screenTouchStart , true); 
+document.body.addEventListener('mousedown', screenClick , true); 
+// Timers
+// screenTimer = window.setTimeout(screenOff,screenTimeout);
+//databaseTimer = window.setTimeout(getDatabase,databaseTimeout);
+getDatabaseInit();
+}
+
+function debug(message) {
+  console.log(message);
+}
+
+function getDatabaseInit() {
+  // periodically check values from the database
+  // Note: this is to set values on the web page
+  // NOT to set the lights.
+//  debug("Checking the database");
+  // Get current light power state
+  client = new HttpClient();
+//lightPower  - regularly done
+//lightsColour display - regularly done  
+//presets - regularly done
+getDatabase()
+}
+
+
+function getDatabase() {
+	// periodically check values from the database
+	// Note: this is to set values on the web page
+	// NOT to set the lights.
+  //current light power
+  thisOutput=client.get(urlStub.concat('getdb?param=lightsPower'), function(response) {
+   if (parseInt(response.split(","[0]))==0) {
+     lightsAreOn=false;
+     debug("DB says lights are off");
+     document.querySelector(".page-container").style.backgroundColor="#111111";
+     }
+   else {
+     lightsAreOn=true;
+     debug("DB says lights are on");
+     document.querySelector(".page-container").style.backgroundColor="#DDDDDD";
+     }
+    });
+
+  //current light colour
+  thisOutput=client.get(urlStub.concat('getdb?param=lightsColour'), function(response) {
+    sendColour("setting",response,false,false);
+    });
+  // presets
+  client = new HttpClient();
+  thisOutput=client.get(urlStub.concat('getpresets'), function(response) {
+    allPresets=response.split("|");
+    for (var i=0; i < allPresets.length; i++ ) {
+      thisPreset=allPresets[i].split(",");
+      presetName=thisPreset[0];
+      if (presetName!="") {
+          thisRed=thisPreset[1];
+          thisGreen=thisPreset[2];
+          thisBlue=thisPreset[3];
+          thisHex="#".concat(RGBtoHex(thisRed)) .concat(RGBtoHex(thisGreen)).concat(RGBtoHex(thisBlue));
+//          debug("presetName=".concat(presetName));
+      var thisPresetObject=document.getElementById(presetName);
+      thisPresetObject.style.backgroundColor=thisHex;
+          }
+      }
+    }) 
+
+	databaseTimer = window.setTimeout(getDatabase,databaseTimeout);
+}
+
+
+function screenClick() {
+    debug("screen clicked");
+    document.body.addEventListener('mouseup', screenClickEnd , true); 
+    lightPowerTimer = window.setTimeout(toggleLights,lightPowerTimeout);
+}
+
+function screenTouchStart() {
+    debug("screen touch start");
+    document.body.addEventListener('touchend', screenTouchEnd , true); 
+    lightPowerTimer = window.setTimeout(toggleLights,lightPowerTimeout);
+}
+
+function screenTouchEnd() {
+  debug("screen touch end");
+  clearTimeout(lightPowerTimer);
+}
+
+function screenClickEnd() {
+     clearTimeout(lightPowerTimer);
+     document.body.addEventListener('mousedown', screenClick , true); 
+}
+
+function toggleLights() {
+    lightsAreOn=!lightsAreOn;
+    debug("Toggling lights to ".concat(lightsAreOn));
+    client = new HttpClient();
+    client.get(urlStub.concat("lightspower?param=").concat(lightsAreOn), function(response) { });
+}
+
+
+function sendColour (thisElement,thisValue,setLights,DB) {
+var colourOut=document.getElementById("colourOutline");  
+// Get the colours first
+var thisBorderObject=document.getElementById("colourOutline");
+var redSliderObject=document.getElementById("redSlider");
+var greenSliderObject=document.getElementById("greenSlider");
+var blueSliderObject=document.getElementById("blueSlider");
+var thisBorderStyle=document.defaultView.getComputedStyle(thisBorderObject,null);
+//console.log("current border style".concat(thisBorderStyle));
+var thisBorderColour=thisBorderStyle.getPropertyValue('border-top-color');
+var thisBorderWidth=thisBorderStyle.getPropertyValue('border-top-width');
+console.log("current border colour: ".concat(thisBorderColour));
+console.log("current border width: ".concat(thisBorderWidth));
+
+var thisRed=thisBorderColour.split("(")[1].split(",")[0];
+var thisGreen=thisBorderColour.split("(")[1].split(",")[1];
+var thisBlue=thisBorderColour.split("(")[1].split(",")[2].split(")")[0];
+
+//console.log("current Red ".concat(thisRed));
+//console.log("current Green ".concat(thisGreen));
+//console.log("current Blue ".concat(thisBlue));
+
+// Set the colours
+// setting = straight to the hex
+// preset = convert to the hex
+// redSlider = keep the blue and green and change the red
+// greenSlider = keep the red and blue and change the green
+// blueSlider = keep the red and green and change the blue
+
+    switch(thisElement) {
+      case "setting":
+        thisRed=parseInt(thisValue.split(',')[0]);
+        thisGreen=parseInt(thisValue.split(',')[1]);
+        thisBlue=parseInt(thisValue.split(',')[2]);
+      break;
+      case "presetOne":
+      case "presetTwo":
+      case "presetThree":
+      case "presetFour":
+      case "presetFive":
+      case "presetSix":
+      case "presetSeven":
+      case "presetEight":
+        var thisRed=thisValue.split("(")[1].split(",")[0];
+        var thisGreen=thisValue.split("(")[1].split(",")[1];
+        var thisBlue=thisValue.split("(")[1].split(",")[2].split(")")[0];
+      break;
+      case "redSlider":
+        thisRed=thisValue;
+      break;
+      case "greenSlider":
+        thisGreen=thisValue;
+      break;
+      case "blueSlider":
+        thisBlue=thisValue;
+      break;
+      default:
+//      console.log	("default - thisElement is ".concat(thisElement));
+      break;
+    }
+    thisValue="#".concat(RGBtoHex(thisRed))	.concat(RGBtoHex(thisGreen)).concat(RGBtoHex(thisBlue));
+    //console.log	("sending colours for ".concat(thisElement).concat(" - ").concat(thisValue).concat(" red: ").concat(thisRed).concat(" green: ").concat(thisGreen).concat(" blue: ").concat(thisBlue));
+
+  thisValue="2vw solid ".concat(thisValue);
+ 
+  colourOut.style.border=thisValue;
+  redSliderObject.value=parseInt(thisRed);
+  greenSliderObject.value=parseInt(thisGreen);
+  blueSliderObject.value=parseInt(thisBlue);
+  client = new HttpClient();
+  if (setLights==true) {
+          client.get(urlStub.concat("setlights?red=").concat(thisRed).concat("&green=").concat(thisGreen).concat("&blue=").concat(thisBlue), function(response) { });
+          }
+  if (DB==true) {
+          client.get(urlStub.concat("setdb?param=lightsColour&red=").concat(thisRed).concat("&green=").concat(thisGreen).concat("&blue=").concat(thisBlue), function(response) { });
+        } 
+}
+
+function RGBtoHex(thisDecimal) {
+    thisHex=parseInt(thisDecimal).toString(16);
+	return thisHex.length == 1 ? "0" + thisHex : thisHex;
+}
+
+function toDecimal(thisHex) {
+	return String(parseInt(thisHex, 16));
+}
+
+function getBorderColourHex(thisBorderObject) {
+ 	var thisBorderStyle=document.defaultView.getComputedStyle(thisBorderObject,null);
+    var thisBorderColour=thisBorderStyle.getPropertyValue('border-top-color');
+//    console.log("current border".concat(thisBorderColour));
+    var thisRed=thisBorderColour.split("(")[1].split(",")[0];
+    var thisGreen=thisBorderColour.split("(")[1].split(",")[1];
+    var thisBlue=thisBorderColour.split("(")[1].split(",")[2].split(")")[0];
+    return "#".concat(RGBtoHex(thisRed))	.concat(RGBtoHex(thisGreen)).concat(RGBtoHex(thisBlue));
+}
+
+function longPress(thisObject) {
+	thisBorderColour=document.defaultView.getComputedStyle(colourOutline,null).getPropertyValue('border-top-color');
+//    debug("long press on ".concat(thisObject.id));
+    longPressTimeOutTimer = window.setTimeout(clearLongPress.bind(null,thisObject),3000);
+	thisObject.style.border="10px solid ".concat(getBorderColourHex(document.getElementById("colourOutline")));
+	;
+}
+
+function clearLongPress(thisObject) {
+//    debug("long press timed out on ".concat(thisObject.id));
+	thisObject.style.border="5px solid #DDDDDD";
+}
+
+
+function setPreset(thisObject,thisHex) {
+    thisObject.style.backgroundColor=thisHex;
+    thisRed=parseInt(thisHex.substring(1,3),16);
+    thisGreen=parseInt(thisHex.substring(3,5),16);
+    thisBlue=parseInt(thisHex.substring(5,7),16);
+    debug("set preset ".concat(thisObject.id).concat(" values ").concat(thisRed).concat(",").concat(thisGreen).concat(",").concat(thisBlue));
+    client.get(urlStub.concat("setdb?param=").concat(thisObject.id).concat("&red=").concat(thisRed).concat("&green=").concat(thisGreen).concat("&blue=").concat(thisBlue), function(response) { });
+}
+
+
+
+
+function Clicker( element ) {
+  this.element = element;
+
+  // bind self for event handlers
+  this.mousedownHandler = this.onmousedown.bind( this );
+  this.mouseupHandler = this.onmouseup.bind( this );
+  this.touchstartHandler = this.ontouchstart.bind ( this );
+  this.touchendHandler = this.ontouchend.bind ( this );
+  
+  this.element.addEventListener( 'mousedown', this.mousedownHandler );
+  this.element.addEventListener( 'touchstart', this.touchstartHandler );
+}
+
+Clicker.prototype.onmousedown = function( event ) {
+//      if (screenIsOn) {
+//     clearTimeout(screenTimer);
+     debug("mousedown ".concat(document.defaultView.getComputedStyle(this.element,null).getPropertyValue('background-color')));
+//   console.log("borderthingy ".concat(document.defaultView.getComputedStyle(document.getElementById("colourOutline"),null).getPropertyValue('border-top-color')));
+     if (document.defaultView.getComputedStyle(this.element,null).getPropertyValue('border-top-width').includes("5px")) {
+         longPressTimer = window.setTimeout(longPress.bind(null,this.element),longPressTimeout);
+         window.addEventListener( 'mouseup', this.mouseupHandler );
+     }
+     else {
+     	clearTimeout(longPressTimeOutTimer)
+     	setPreset(this.element,getBorderColourHex(this.element));
+     	this.element.style.border="5px solid #DDDDDD";
+     }
+//   }   
+};
+
+Clicker.prototype.ontouchstart = function( event ) {
+ //     debug("touchstart ".concat(document.defaultView.getComputedStyle(this.element,null).getPropertyValue('background-color')));
+//   console.log("borderthingy ".concat(document.defaultView.getComputedStyle(document.getElementById("colourOutline"),null).getPropertyValue('border-top-color')));
+     if (document.defaultView.getComputedStyle(this.element,null).getPropertyValue('border-top-width').includes("5px")) {
+         longPressTimer = window.setTimeout(longPress.bind(null,this.element),longPressTimeout);
+         window.addEventListener( 'touchend', this.touchendHandler );
+     }
+     else {
+      clearTimeout(longPressTimeOutTimer)
+      setPreset(this.element,getBorderColourHex(this.element));
+      this.element.style.border="5px solid #DDDDDD";
+     }
+};
+
+
+Clicker.prototype.onmouseup = function() {
+  clearTimeout(longPressTimer); 
+//  screenTimerActive();
+//debug("mouseup ".concat(document.defaultView.getComputedStyle(this.element,null).getPropertyValue('background-color')));
+  if (lightsAreOn && (document.defaultView.getComputedStyle(this.element,null).getPropertyValue('border-top-width').includes("5px"))) {
+  	   thisPresetColour=document.defaultView.getComputedStyle(this.element,null).getPropertyValue('background-color');
+  	   sendColour(this.element.id,thisPresetColour,true,true);
+       debug("onmouseup - sending colour ".concat(this.element.id).concat(" - value ").concat(thisPresetColour));
+  }
+  window.removeEventListener( 'mouseup', this.mouseupHandler );
+//  window.removeEventListener( 'mousemove', this.mousemoveHandler );
+};
+
+Clicker.prototype.ontouchend = function() {
+  event.preventDefault();
+  clearTimeout(longPressTimer); 
+//debug("touchend ".concat(document.defaultView.getComputedStyle(this.element,null).getPropertyValue('background-color')));
+  if (lightsAreOn && (document.defaultView.getComputedStyle(this.element,null).getPropertyValue('border-top-width').includes("5px"))) {
+             thisPresetColour=document.defaultView.getComputedStyle(this.element,null).getPropertyValue('background-color');
+       sendColour(this.element.id,thisPresetColour,true,true);
+       debug("touchend - sending colour ".concat(this.element.id).concat(" - value ").concat(thisPresetColour));
+  }
+  window.removeEventListener( 'touchend', this.touchendHandler );
+//  window.removeEventListener( 'touchmove', this.touchmoveHandler );
+};
+
+
+
+
+function Slider( element ) {
+  this.element = element;
+
+  // bind self for event handlers
+  this.mousedownHandler = this.onmousedown.bind( this );
+  this.mouseupHandler = this.onmouseup.bind( this );
+  this.mousemoveHandler = this.onmousemove.bind( this );
+  this.touchstartHandler = this.ontouchstart.bind( this );
+  this.touchendHandler = this.ontouchend.bind( this );
+  this.touchmoveHandler = this.ontouchmove.bind( this );
+  
+  this.element.addEventListener( 'mousedown', this.mousedownHandler );
+  this.element.addEventListener( 'touchstart', this.touchstartHandler );
+}
+
+Slider.prototype.onmousedown = function( event ) {
+//  if (screenIsOn) {
+//  debug("screen is on - mousedown ".concat(this.element.value));
+//      clearTimeout(screenTimer);
+      window.addEventListener( 'mousemove', this.mousemoveHandler );
+      window.addEventListener( 'mouseup', this.mouseupHandler );
+//      }
+  };
+
+Slider.prototype.ontouchstart = function( event ) {
+  //  event.preventDefault();
+//  debug("touchstart ".concat(this.element.value));
+      window.addEventListener( 'touchmove', this.touchmoveHandler );
+      window.addEventListener( 'touchend', this.touchendHandler );
+      }
+
+Slider.prototype.onmousemove = function( event ) {
+  clearTimeout(lightPowerTimer);	
+//  console.log("mousemove ".concat(this.element.value));
+//  sendColour(this.element.id,this.element.value,true,false);
+  window.addEventListener( 'mouseup', this.mouseupHandler );
+};
+
+Slider.prototype.ontouchmove = function( event ) {
+//  console.log("touchmove ".concat(this.element.value));
+//  sendColour(this.element.id,this.element.value,true,false);
+  window.addEventListener( 'touchend', this.touchendHandler );
+};
+
+
+Slider.prototype.onmouseup = function( event) {
+   debug("onmouseup - sending colour ".concat(this.element.id).concat(" - value ").concat(this.element.value))
+   sendColour(this.element.id,this.element.value,true,true);
+   window.removeEventListener( 'mouseup', this.mouseupHandler );
+   window.removeEventListener( 'mousemove', this.mousemoveHandler );
+//   screenTimerActive();    
+};
+
+
+Slider.prototype.ontouchend = function( event ) {
+   debug("ontouchend - sending colour".concat(this.element.value))
+   sendColour(this.element.id,this.element.value,true,true);
+   window.removeEventListener( 'touchend', this.touchendHandler );
+   window.removeEventListener( 'touchmove', this.touchmoveHandler );
+};
+
+var HttpClient = function() {
+    this.get = function(aUrl, aCallback) {
+        var anHttpRequest = new XMLHttpRequest();
+        anHttpRequest.onreadystatechange = function() { 
+            if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                aCallback(anHttpRequest.responseText);
+        }
+
+        anHttpRequest.open( "GET", aUrl, true );            
+        anHttpRequest.send( null );
+    }
+}

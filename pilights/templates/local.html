@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8'/>
+    <title>Some Web Page</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script type="text/javascript" src="{{ url_for('static', filename='control-local.js') }}"></script>
+  </head>
+  <body onLoad='doStuff();'>
+    <div class='page-container' id='colourOutline'>
+      <div class='photo-grid-container' id='clickContainer'>
+         <div class='photo-grid'>
+           <div class='photo-grid-item box-seven' id='presetSeven'>
+           </div>
+           <div class='photo-grid-item box-five' id='presetFive'>
+           </div>
+           <div class='photo-grid-item box-three' id='presetThree'>
+           </div>
+           <div class='photo-grid-item box-one'  id='presetOne'>
+           </div>
+         </div>
+         <div class='photo-grid'>
+           <div class='photo-grid-item box-eight'  id='presetEight'>
+           </div>
+           <div class='photo-grid-item box-six'  id='presetSix'>
+           </div>
+           <div class='photo-grid-item box-four'  id='presetFour'>
+           </div>
+           <div class='photo-grid-item box-two'  id='presetTwo'>
+           </div>
+         </div>
+      </div>
+      <div class='footer'>
+        <div class='footer-item footer-one'></div>
+        <div class='footer-item footer-two'>
+          <div class="slidecontainer">
+            <input type="range" min="0" max="255" value="128" class="slider slider-red" id="redSlider">
+          </div>
+          <div class="slidecontainer">
+            <input type="range" min="0" max="255" value="128" class="slider slider-green" id="greenSlider">
+          </div>
+          <div class="slidecontainer">
+            <input type="range" min="0" max="255" value="128" class="slider slider-blue" id="blueSlider">
+          </div>
+        </div>
+        <div class='footer-item footer-three'></div>
+      </div>
+    </div>
+  </body>
+</html>
+
