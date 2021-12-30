@@ -13,6 +13,6 @@ By default, this exposes the port 5000 on the Raspberry Pi to any web browser (a
 I'm using a [2.8 inch touchscreen](https://raspberrypiwiki.com/index.php/2.8_inch_Touch_Screen_for_Pi_zero) which I think I got from AliExpress.
 This runs a very small installation of [OpenBox](http://openbox.org/wiki/Help:Autostart) which automatically starts Chrome in Kiosk mode:
 
-./openbox/autostart:/usr/bin/chromium-browser ----incognito --noerrdialogs --disable-infobars  --window-position=0,0 --kiosk http://localhost:5000/local &
+`./openbox/autostart:/usr/bin/chromium-browser ----incognito --noerrdialogs --disable-infobars  --window-position=0,0 --kiosk http://localhost:5000/local &`
 
  
