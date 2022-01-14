@@ -1,8 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request
-from pilights import app,Lights,db
+from pilights import app,Lights,db,functions
 import RPi.GPIO as GPIO
-import pigpio
-pi=pigpio.pi()
 # Do setup in case it's needed
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -71,6 +69,8 @@ def setLights():
     paramDb = request.args.get('db', 'false')
     paramDec = request.args.get('dec', 'false')
     lightsDB=Lights.query.filter_by(configName="lightsColour").first()
+
+    # this bit for presets overriding the RGB
     if paramPreset != 0:
         paramDb='true'
     # some furkling required to get presets to number
@@ -79,26 +79,18 @@ def setLights():
         paramRed=lightsPresetDB.configRed
         paramGreen=lightsPresetDB.configGreen
         paramBlue=lightsPresetDB.configBlue
-    if paramRed !=9000: 
-        if paramDec == 'true':
-            paramRed=int(int(paramRed)*2.575757)
-        pi.set_PWM_dutycycle(20,int(paramRed)%256)
-        if paramDb == 'true':
-            lightsDB.configRed=paramRed
-    if paramGreen !=9000:
-        if paramDec == 'true':
-            paramGreen=int(int(paramGreen)*2.575757)
-        pi.set_PWM_dutycycle(19,int(paramGreen)%256)
-        if paramDb == 'true':
-            lightsDB.configGreen=paramGreen
-    if paramBlue !=9000:
-        if paramDec == 'true':
-            paramBlue=int(int(paramBlue)*2.575757)        
-        pi.set_PWM_dutycycle(21,int(paramBlue)%256)
-        if paramDb == 'true':
-            lightsDB.configBlue=paramBlue
+
+    # running the separate function to be kinder to animals (low power suppply)
+    doLEDs(paramRed,paramGreen,paramBlue,paramDec)
+    
     if paramDb == 'true':
-            db.session.commit()
+        if paramRed !=9000: 
+            lightsDB.configRed=paramRed
+        if paramGreen !=9000:
+            lightsDB.configGreen=paramGreen
+        if paramBlue !=9000:
+            lightsDB.configBlue=paramBlue
+        db.session.commit()
     return 'setlights R:'+str(int(paramRed))+ ' G:'+str(int(paramGreen))+' B:'+str(int(paramBlue))
 
 @app.route("/lightspower")
@@ -122,9 +114,8 @@ def lightsPower():
         db.session.commit()
         thisLightsPower=Lights.query.filter_by(configName="lightsPower").first()
     truth=str(thisLightsPower.configRed)+","+str(thisLightsPower.configGreen)+","+str(thisLightsPower.configBlue)
-    pi.set_PWM_dutycycle(20,int(thisLightsPower.configRed))
-    pi.set_PWM_dutycycle(19,int(thisLightsPower.configGreen))
-    pi.set_PWM_dutycycle(21,int(thisLightsPower.configBlue))
+    
+    doLEDs(thisLightsPower.configRed,thisLightsPower.configGreen,thisLightsPower.configBlue)
     return 'lights: '+truth
 
 @app.route("/screenoff")
