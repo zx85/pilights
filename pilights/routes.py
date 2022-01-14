@@ -63,16 +63,16 @@ def setDB():
 @app.route("/setlights")
 def setLights():
     paramPreset = request.args.get('preset',0)
-    paramRed = request.args.get('red', 9000)
-    paramGreen = request.args.get('green', 9000)
-    paramBlue = request.args.get('blue', 9000)
-    paramDb = request.args.get('db', 'false')
-    paramDec = request.args.get('dec', 'false')
+    paramRed = request.args.get('red', False)
+    paramGreen = request.args.get('green', False)
+    paramBlue = request.args.get('blue', False)
+    paramDb = request.args.get('db', False)
+    paramDec = request.args.get('dec', False)
     lightsDB=Lights.query.filter_by(configName="lightsColour").first()
 
     # this bit for presets overriding the RGB
     if paramPreset != 0:
-        paramDb='true'
+        paramDb=True
     # some furkling required to get presets to number
         param=presetSwitcher.get(int(paramPreset),"presetOne")
         lightsPresetDB=Lights.query.filter_by(configName=param).first()
@@ -83,12 +83,12 @@ def setLights():
     # running the separate function to be kinder to animals (low power suppply)
     doLEDs(paramRed,paramGreen,paramBlue,paramDec)
     
-    if paramDb == 'true':
-        if paramRed !=9000: 
+    if paramDb:
+        if paramRed:
             lightsDB.configRed=paramRed
-        if paramGreen !=9000:
+        if paramGreen:
             lightsDB.configGreen=paramGreen
-        if paramBlue !=9000:
+        if paramBlue:
             lightsDB.configBlue=paramBlue
         db.session.commit()
     return 'setlights R:'+str(int(paramRed))+ ' G:'+str(int(paramGreen))+' B:'+str(int(paramBlue))
