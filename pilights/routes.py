@@ -1,5 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request
-from pilights import app,Lights,db,functions
+from pilights import app,Lights,db
+from LED import doLEDs
 import RPi.GPIO as GPIO
 # Do setup in case it's needed
 GPIO.setmode(GPIO.BCM)
@@ -66,7 +67,7 @@ def setLights():
     paramRed = request.args.get('red', False)
     paramGreen = request.args.get('green', False)
     paramBlue = request.args.get('blue', False)
-    paramDb = request.args.get('db', False)
+    paramDb = request.args.get('db', True)
     paramDec = request.args.get('dec', False)
     lightsDB=Lights.query.filter_by(configName="lightsColour").first()
 
@@ -81,7 +82,7 @@ def setLights():
         paramBlue=lightsPresetDB.configBlue
 
     # running the separate function to be kinder to animals (low power suppply)
-    doLEDs(paramRed,paramGreen,paramBlue,paramDec)
+    doLEDs(lightsDB,paramRed,paramGreen,paramBlue,paramDec)
     
     if paramDb:
         if paramRed:
