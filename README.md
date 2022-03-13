@@ -5,8 +5,7 @@ A simple flask application to do stuff with those RGB LED light strip things
 ## Software
 I'm not sure all of these are needed, but I've got them included for some reason.
 
-`pip install pigpio RPi.GPIO Flask Flask-SQLAlchemy SQLAlchemy`
-
+`pip install pigpio RPi.GPIO Flask Flask-SQLAlchemy SQLAlchem
 ## Circuit
 I'm using a very simple circuit to power the lights that I found here - https://dordnung.de/raspberrypi-ledstrip 
 
