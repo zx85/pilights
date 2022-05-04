@@ -21,3 +21,8 @@ This runs a very small installation of [OpenBox](http://openbox.org/wiki/Help:Au
 `./openbox/autostart:/usr/bin/chromium-browser ----incognito --noerrdialogs --disable-infobars  --window-position=0,0 --kiosk http://localhost:5000/local &`
 
  
+
+### TODO
+- save the current state in the DB when the lights are set
+- merge this with the main branch when it's all good and cooked
+
