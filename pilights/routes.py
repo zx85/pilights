@@ -106,17 +106,19 @@ def lightsPower():
         thisLightsPower.configBlue=thisLightsColour.configBlue
         thisLightsPower=Lights.query.filter_by(configName="lightsPower").first()
         db.session.commit()
+        doLEDs(thisLightsColour,thisLightsPower.configRed,thisLightsPower.configGreen,thisLightsPower.configBlue)
     else:
         truth="It is false"
+        thisLightsColour=Lights.query.filter_by(configName="lightsColour").first()
         thisLightsPower=Lights.query.filter_by(configName="lightsPower").first()
         thisLightsPower.configRed=0
         thisLightsPower.configGreen=0
         thisLightsPower.configBlue=0
         db.session.commit()
         thisLightsPower=Lights.query.filter_by(configName="lightsPower").first()
+        doLEDs(thisLightsColour,thisLightsPower.configRed,thisLightsPower.configGreen,thisLightsPower.configBlue)
     truth=str(thisLightsPower.configRed)+","+str(thisLightsPower.configGreen)+","+str(thisLightsPower.configBlue)
     
-    doLEDs(thisLightsPower.configRed,thisLightsPower.configGreen,thisLightsPower.configBlue)
     return 'lights: '+truth
 
 @app.route("/screenoff")
